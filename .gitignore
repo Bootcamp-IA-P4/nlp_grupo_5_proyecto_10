@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+.python-version
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# Entornos virtuales
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Configuración de bases de datos
+database/.env
+database/config.ini
+*.db
+
+# Supabase
+.supabase/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs y cache
+*.log
+.pytest_cache/
+.coverage
+
+# Streamlit cache (temporal)
+.streamlit/secrets.toml
+
+/.qodo
+/htmlcov
+/tests/htmlcov
+/tests/unit/htmlcov
+/tests/integration/htmlcov
+
+
+/tests/test_data.json
+/tests/test_image.png
+/tests/test_image.jpg
+/tests/test_image.jpeg
+
+# MLflow
+mlruns/
+**/mlruns/
+mlartifacts/
+**/mlartifacts/
