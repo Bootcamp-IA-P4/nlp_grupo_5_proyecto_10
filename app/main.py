@@ -26,6 +26,6 @@ class TextInput(BaseModel):
 def predict(input_text: TextInput):
     try:
         prediction = pipeline.predict([input_text.text])
-        return {"prediction": prediction[0]}
+        return {"prediction": int(prediction[0])}  # Convertir a int si es necesario
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
