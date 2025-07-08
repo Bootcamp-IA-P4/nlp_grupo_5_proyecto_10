@@ -1,3 +1,4 @@
+// frontend/src/services/messageService.js
 import api from '../api/axios';
 
 export const getMessages = async () => {
@@ -23,4 +24,20 @@ export const deleteMessage = async (id) => {
 export const predictMessage = async (text) => {
   const response = await api.post('/predict', { text });
   return response.data;
+};
+
+export const analyzeAndSaveMessage = async (text) => {
+  // Get toxicity prediction first
+  const prediction = await predictMessage(text);
+
+  // Build message object
+  const messageToSave = {
+    text,
+    toxicity: prediction.toxicity,
+    timestamp: new Date().toISOString(),
+  };
+
+  // Save message with prediction data
+  const savedMessage = await createMessage(messageToSave);
+  return savedMessage;
 };
