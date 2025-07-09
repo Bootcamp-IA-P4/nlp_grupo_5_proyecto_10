@@ -26,8 +26,12 @@ export default function MessageForm({ onSuccess }) {
     }
   };
 
+  const getSentimentLabel = (toxicity) => {
+    return toxicity === 0 ? "Positive" : "Negative";
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 bg-white dark:bg-gray-800 rounded p-4 shadow">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <textarea
         className="border rounded p-2 resize-none dark:bg-gray-900 dark:text-gray-100"
         placeholder="Enter message text"
@@ -39,7 +43,7 @@ export default function MessageForm({ onSuccess }) {
       />
       <button
         type="submit"
-        className="bg-purple-600 text-white rounded py-2 disabled:opacity-50"
+        className="bg-purple-600 text-white rounded py-2 disabled:opacity-50 hover:bg-purple-700 transition"
         disabled={loading}
       >
         {loading ? 'Analyzing...' : 'Submit'}
@@ -48,9 +52,9 @@ export default function MessageForm({ onSuccess }) {
       {error && <p className="text-red-500">{error}</p>}
 
       {result && (
-        <div className="mt-4 p-2 bg-green-100 dark:bg-green-800 rounded text-gray-800 dark:text-green-200">
+        <div className="mt-4 p-3 rounded bg-green-50 dark:bg-green-800 text-green-900 dark:text-green-200">
           <p><strong>Message:</strong> {result.text}</p>
-          <p><strong>Toxicity:</strong> {result.toxicity}%</p>
+          <p><strong>Sentiment:</strong> {getSentimentLabel(result.toxicity)}</p>
           <p><strong>Timestamp:</strong> {new Date(result.timestamp).toLocaleString()}</p>
         </div>
       )}
