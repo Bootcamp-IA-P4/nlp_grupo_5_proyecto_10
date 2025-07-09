@@ -117,3 +117,5 @@ correction_dict = {
     "wierd": "weird",
 }
 
+from spellchecker import SpellChecker
+spell = SpellChecker()

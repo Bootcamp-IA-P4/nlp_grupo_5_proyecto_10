@@ -1,11 +1,10 @@
 from sklearn.base import BaseEstimator, TransformerMixin
-from preprocessing import (
+from .preprocessing import (
     clean_noise, normalize_text, replace_slang, tokenize_text,
     normalize_repeated_letters, correct_spelling,
     remove_stopwords, lemmatize_tokens, spell
 )
-from preprocessing_resources import slang_dict, correction_dict
-
+from .preprocessing_resources import slang_dict, correction_dict
 
 class TextPreprocessor(BaseEstimator, TransformerMixin):
     def __init__(self, slang_dict=slang_dict, correction_dict=correction_dict, spell=spell):

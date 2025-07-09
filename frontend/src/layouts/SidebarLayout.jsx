@@ -1,6 +1,7 @@
 // frontend/src/layouts/SidebarLayout.jsx
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import DarkModeToggle from '../components/common/DarkModeToggle';
 
 const SidebarLayout = ({ children }) => {
   const location = useLocation();
@@ -30,6 +31,10 @@ const SidebarLayout = ({ children }) => {
             </Link>
           ))}
         </nav>
+
+        <div className="p-4">
+          <DarkModeToggle />
+        </div>
         {/* Footer o logout botón podrían ir aquí */}
       </aside>
       <main className="flex-1 overflow-auto">{children}</main>
