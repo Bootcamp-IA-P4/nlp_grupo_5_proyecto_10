@@ -1,6 +1,6 @@
 import joblib
 from sklearn.pipeline import Pipeline
-from TextPreprocessor import TextPreprocessor
+from .TextPreprocessor import TextPreprocessor
 import pandas as pd
 
 # Cargar modelo y vectorizador ya entrenados
