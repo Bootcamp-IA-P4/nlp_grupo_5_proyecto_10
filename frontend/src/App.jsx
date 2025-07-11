@@ -5,6 +5,7 @@ import MessagesPage from "./pages/MessagesPage";
 import SidebarLayout from "./layouts/SidebarLayout";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import "./index.css";
+import HealthCheck from "./components/common/HealthCheck";
 
 function App() {
   return (

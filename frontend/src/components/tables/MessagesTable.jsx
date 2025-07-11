@@ -97,6 +97,7 @@ export default function MessagesTable({ refreshTrigger }) {
               <th className="px-4 py-2">Text</th>
               <th className="px-4 py-2">Sentiment</th>
               <th className="px-4 py-2">Confidence</th>
+              <th className="px-4 py-2">Source</th>
               <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
@@ -104,7 +105,7 @@ export default function MessagesTable({ refreshTrigger }) {
             {messages.length === 0 ? (
               <tr>
                 <td
-                  colSpan="5"
+                  colSpan="6"
                   className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
                 >
                   No messages found. Create your first message above!
@@ -117,8 +118,15 @@ export default function MessagesTable({ refreshTrigger }) {
                   className="text-center border-b dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-purple-900"
                 >
                   <td className="px-4 py-2 dark:text-gray-200">{msg.id}</td>
-                  <td className="px-4 py-2 dark:text-gray-200 text-left max-w-xs truncate">
-                    {msg.text}
+                  <td className="px-4 py-2 dark:text-gray-200 text-left max-w-xs">
+                    <div className="truncate" title={msg.text}>
+                      {msg.text}
+                    </div>
+                    {msg.source === "youtube" && msg.youtube_author && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        👤 {msg.youtube_author} • 👍 {msg.youtube_likes || 0}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-2">
                     <span
@@ -134,6 +142,22 @@ export default function MessagesTable({ refreshTrigger }) {
                       sentiment={msg.sentiment}
                       confidence={msg.confidence}
                     />
+                  </td>
+                  <td className="px-4 py-2">
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-semibold ${
+                        msg.source === "youtube"
+                          ? "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200"
+                          : "bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200"
+                      }`}
+                    >
+                      {msg.source === "youtube" ? "📺 YouTube" : "✏️ Manual"}
+                    </span>
+                    {msg.source === "youtube" && msg.youtube_channel && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {msg.youtube_channel}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-2">
                     <button

@@ -1,17 +1,27 @@
-from sqlalchemy import Column, Integer, String, DateTime, Float
-from sqlalchemy.sql import func
-from .database import Base
+from sqlalchemy import Column, Integer, String, Text, Float, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+from datetime import datetime
+
+Base = declarative_base()
 
 class Message(Base):
     __tablename__ = "messages"
-
+    
     id = Column(Integer, primary_key=True, index=True)
-    text = Column(String, nullable=False)
-    sentiment = Column(String, nullable=False)  # "toxic" or "not toxic"
-    confidence = Column(Float, nullable=True)  # Confidence score of prediction
-    embedding = Column(String, nullable=True)  # JSON string of embeddings
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    text = Column(Text, nullable=False)
+    sentiment = Column(String, nullable=False)
+    confidence = Column(Float, nullable=False)
+    embedding = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Add new columns for YouTube metadata
+    source = Column(String, default="manual")  # "manual" or "youtube"
+    youtube_video_id = Column(String, nullable=True)
+    youtube_author = Column(String, nullable=True)
+    youtube_likes = Column(Integer, default=0)
+    youtube_video_title = Column(String, nullable=True)
+    youtube_channel = Column(String, nullable=True)
 
     def __repr__(self):
         return f"<Message(id={self.id}, sentiment='{self.sentiment}', text='{self.text[:50]}...')>"
