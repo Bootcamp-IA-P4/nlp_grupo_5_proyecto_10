@@ -61,7 +61,19 @@ def predict(input_text: TextInput):
     try:
         prediction = pipeline.predict([input_text.text])
         sentiment = "not toxic" if int(prediction[0]) == 0 else "toxic"
-        return {"prediction": sentiment}
+        
+        # Get prediction probabilities for confidence score
+        try:
+            prediction_proba = pipeline.predict_proba([input_text.text])
+            confidence = float(max(prediction_proba[0]))
+        except:
+            # If predict_proba is not available, use a default confidence
+            confidence = 0.5
+            
+        return {
+            "prediction": sentiment,
+            "confidence": confidence
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -75,11 +87,21 @@ def get_messages(db: Session = Depends(get_db)):
 def create_message(message: TextInput, db: Session = Depends(get_db)):
     prediction = pipeline.predict([message.text])
     sentiment = "not toxic" if int(prediction[0]) == 0 else "toxic"
+    
+    # Get prediction probabilities for confidence score
+    try:
+        prediction_proba = pipeline.predict_proba([message.text])
+        confidence = float(max(prediction_proba[0]))
+    except:
+        # If predict_proba is not available, use a default confidence
+        confidence = 0.5
+    
     embedding = get_embedding(message.text)
 
     new_message = models.Message(
         text=message.text,
         sentiment=sentiment,
+        confidence=confidence,
         embedding=embedding
     )
     db.add(new_message)
@@ -93,9 +115,18 @@ def update_message(id: int, message: TextInput, db: Session = Depends(get_db)):
     db_message = db.query(models.Message).filter(models.Message.id == id).first()
     if not db_message:
         raise HTTPException(status_code=404, detail="Message not found")
+    
     db_message.text = message.text
     prediction = pipeline.predict([message.text])
     db_message.sentiment = "not toxic" if int(prediction[0]) == 0 else "toxic"
+    
+    # Update confidence
+    try:
+        prediction_proba = pipeline.predict_proba([message.text])
+        db_message.confidence = float(max(prediction_proba[0]))
+    except:
+        db_message.confidence = 0.5
+    
     db_message.embedding = get_embedding(message.text)
     db.commit()
     db.refresh(db_message)
