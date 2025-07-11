@@ -256,6 +256,8 @@ const ToxicityTypesChart = ({ messages }) => {
   };
 
   const animateElement = (selector, property, value, duration) => {
+    if (!containerRef.current) return;
+
     const element = containerRef.current.querySelector(selector);
     if (element) {
       element.style[property] = value;

@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+google-api-python-client
+python-dotenv
+scikit-learn
+pandas
+numpy
+joblib
