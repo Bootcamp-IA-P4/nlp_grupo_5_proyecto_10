@@ -114,3 +114,6 @@ frontend/lib-cov/
 frontend/logs/
 frontend/*.tgz
 frontend/*.tar.gz
+
+# Carpeta personalizada para ignorar
+tokenizador/
