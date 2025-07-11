@@ -1,33 +1,33 @@
 // frontend/src/components/forms/MessageForm.jsx
-import React, { useState } from 'react';
-import { analyzeAndSaveMessage } from '../../services/messageService';
+import React, { useState } from "react";
+import { analyzeAndSaveMessage } from "../../services/messageService";
 
 export default function MessageForm({ onSuccess }) {
-  const [text, setText] = useState('');
+  const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [result, setResult] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
     setResult(null);
 
     try {
       const savedMessage = await analyzeAndSaveMessage(text);
       setResult(savedMessage);
-      setText('');
+      setText("");
       if (onSuccess) onSuccess(savedMessage);
     } catch (err) {
-      setError('Failed to analyze and save message.');
+      setError("Failed to analyze and save message.");
     } finally {
       setLoading(false);
     }
   };
 
-  const getSentimentLabel = (toxicity) => {
-    return toxicity === 0 ? "Positive" : "Negative";
+  const getSentimentLabel = (sentiment) => {
+    return sentiment === "not toxic" ? "Not Toxic" : "Toxic";
   };
 
   return (
@@ -46,16 +46,22 @@ export default function MessageForm({ onSuccess }) {
         className="bg-purple-600 text-white rounded py-2 disabled:opacity-50 hover:bg-purple-700 transition"
         disabled={loading}
       >
-        {loading ? 'Analyzing...' : 'Submit'}
+        {loading ? "Analyzing..." : "Submit"}
       </button>
 
       {error && <p className="text-red-500">{error}</p>}
 
       {result && (
         <div className="mt-4 p-3 rounded bg-green-50 dark:bg-green-800 text-green-900 dark:text-green-200">
-          <p><strong>Message:</strong> {result.text}</p>
-          <p><strong>Sentiment:</strong> {getSentimentLabel(result.toxicity)}</p>
-          <p><strong>Timestamp:</strong> {new Date(result.timestamp).toLocaleString()}</p>
+          <p>
+            <strong>Message:</strong> {result.text}
+          </p>
+          <p>
+            <strong>Sentiment:</strong> {getSentimentLabel(result.sentiment)}
+          </p>
+          <p>
+            <strong>ID:</strong> {result.id}
+          </p>
         </div>
       )}
     </form>

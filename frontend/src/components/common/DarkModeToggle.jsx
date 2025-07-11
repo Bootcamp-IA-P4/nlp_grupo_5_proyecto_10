@@ -1,19 +1,30 @@
 // frontend/src/components/common/DarkModeToggle.jsx
-import React from 'react';
-import useDarkMode from '../../hooks/useDarkMode';
-import { Moon, Sun } from 'lucide-react';
+import React from "react";
+import { useTheme } from "../../contexts/ThemeContext";
 
 const DarkModeToggle = () => {
-  const [darkMode, setDarkMode] = useDarkMode();
+  const { theme, toggleTheme } = useTheme();
 
   return (
-    <button
-      onClick={() => setDarkMode(!darkMode)}
-      className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded transition"
-    >
-      {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-      {darkMode ? 'Light Mode' : 'Dark Mode'}
-    </button>
+    <div className="flex items-center space-x-3">
+      <span className="text-sm text-purple-200">
+        {theme === "light" ? "☀️" : "🌙"}
+      </span>
+      <button
+        onClick={toggleTheme}
+        className="relative w-12 h-6 bg-purple-300 dark:bg-purple-600 rounded-full p-1 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
+        aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+      >
+        <div
+          className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
+            theme === "dark" ? "translate-x-6" : "translate-x-0"
+          }`}
+        />
+      </button>
+      <span className="text-xs text-purple-200">
+        {theme === "light" ? "Light" : "Dark"}
+      </span>
+    </div>
   );
 };
 
