@@ -118,12 +118,19 @@ frontend/logs/
 frontend/*.tgz
 frontend/*.tar.gz
 
+# Large data files that exceed GitHub's recommended size
+data/raw/train.csv
+data/raw/*.csv
+*.csv
+!data/clean/small_*.csv
+
 # Large model files that exceed GitHub's 100MB limit
 tokenizador/model.safetensors
 *.safetensors
 *.bin
 models/*.bin
 models/*.safetensors
+models/*.pkl
 
 # Keep configuration files but exclude large model binaries
 !tokenizador/config.json
