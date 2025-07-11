@@ -1,4 +1,4 @@
-# main.py
+# Simple version without improved model
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,11 +13,11 @@ import logging
 from db import models
 from db.database import SessionLocal, engine
 
-# Set up logging first
+# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load original model as fallback
+# Load original model
 model_path = os.path.join(os.path.dirname(__file__), '..', 'models', 'pipeline_final.pkl')
 pipeline = joblib.load(model_path)
 
@@ -31,88 +31,18 @@ def get_embedding(text):
     embedding = embedder.encode(text).tolist()
     return json.dumps(embedding)
 
-# Try to load the optimized model first, then fallback
-USE_OPTIMIZED_MODEL = False
-optimized_model = None
-
-try:
-    logger.info("🚀 Attempting to load optimized model (135MB compressed)...")
-    from app.optimized_model import get_optimized_model
-    optimized_model = get_optimized_model()
-    if optimized_model:
-        USE_OPTIMIZED_MODEL = True
-        logger.info("✅ Using optimized transformer model (INT8 + compressed)")
-        logger.info(f"📊 Model info: {optimized_model.get_model_info()}")
-    else:
-        raise Exception("Optimized model not available")
-        
-except Exception as e:
-    logger.warning(f"Optimized model not available: {e}")
-    
-    # Try the regular improved model
-    try:
-        logger.info("📦 Attempting to load regular improved model...")
-        import torch
-        from transformers import AutoTokenizer, AutoModelForSequenceClassification
-        
-        model_dir = "./tokenizador"
-        if os.path.exists(model_dir):
-            tokenizer = AutoTokenizer.from_pretrained(model_dir, local_files_only=True)
-            model = AutoModelForSequenceClassification.from_pretrained(model_dir, local_files_only=True)
-            
-            class SimpleImprovedModel:
-                def __init__(self, tokenizer, model):
-                    self.tokenizer = tokenizer
-                    self.model = model
-                    self.id2label = model.config.id2label
-                
-                def predict_single(self, text):
-                    inputs = self.tokenizer([text], padding=True, truncation=True, return_tensors="pt", max_length=512)
-                    with torch.no_grad():
-                        outputs = self.model(**inputs)
-                        probs = torch.nn.functional.softmax(outputs.logits, dim=1)
-                        pred = torch.argmax(probs, dim=1).item()
-                        confidence = probs.max().item()
-                    
-                    star_label = self.id2label.get(pred, "1 star")
-                    if isinstance(star_label, str) and star_label.split()[0].isdigit():
-                        star_number = int(star_label.split()[0])
-                    else:
-                        star_number = int(str(star_label)[0]) if str(star_label)[0].isdigit() else 1
-                    
-                    sentiment = "toxic" if star_number <= 3 else "not toxic"
-                    return sentiment, confidence
-            
-            optimized_model = SimpleImprovedModel(tokenizer, model)
-            USE_OPTIMIZED_MODEL = True
-            logger.info("✅ Using regular improved transformer model")
-        else:
-            raise Exception("Tokenizador directory not found")
-            
-    except Exception as e2:
-        logger.warning(f"Improved model also not available: {e2}")
-        USE_OPTIMIZED_MODEL = False
-
-logger.info(f"🎯 Final model selection: {'Optimized/Improved Transformer' if USE_OPTIMIZED_MODEL else 'Original Pipeline'}")
-
-# Define prediction function
+# Simple prediction function using original pipeline
 def predict_sentiment(text):
-    if USE_OPTIMIZED_MODEL and optimized_model:
-        try:
-            return optimized_model.predict_single(text)
-        except Exception as e:
-            logger.error(f"Error with optimized model: {e}. Falling back to original.")
-    
-    # Fallback to original pipeline
     try:
         prediction = pipeline.predict([text])
         sentiment = "not toxic" if int(prediction[0]) == 0 else "toxic"
         
+        # Try to get confidence from pipeline
         try:
             prediction_proba = pipeline.predict_proba([text])
             confidence = float(max(prediction_proba[0]))
         except:
-            confidence = 0.75
+            confidence = 0.75  # Default confidence
             
         return sentiment, confidence
     except Exception as e:
