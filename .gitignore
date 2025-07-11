@@ -25,6 +25,7 @@ venv.bak/
 database/.env
 database/config.ini
 *.db
+messages.db
 
 # Supabase
 .supabase/
@@ -64,3 +65,52 @@ mlruns/
 **/mlruns/
 mlartifacts/
 **/mlartifacts/
+
+# Frontend - Node.js
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/coverage/
+frontend/.nyc_output/
+frontend/.cache/
+frontend/.parcel-cache/
+frontend/.next/
+frontend/out/
+
+# Frontend - Package managers
+frontend/package-lock.json
+frontend/yarn.lock
+frontend/pnpm-lock.yaml
+
+# Frontend - Environment and config
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Frontend - IDE and editor
+frontend/.vscode/
+frontend/.idea/
+frontend/*.swp
+frontend/*.swo
+
+# Frontend - OS
+frontend/.DS_Store
+frontend/Thumbs.db
+
+# Frontend - Logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/lerna-debug.log*
+
+# Frontend - Runtime
+frontend/.pnp
+frontend/.pnp.js
+frontend/coverage/
+frontend/lib-cov/
+frontend/logs/
+frontend/*.tgz
+frontend/*.tar.gz
