@@ -114,17 +114,6 @@ frontend/lib-cov/
 frontend/logs/
 frontend/*.tgz
 frontend/*.tar.gz
-tokenizador/model.safetensors
-*.safetensors
 
-# Environment variables (CRITICAL - NEVER COMMIT API KEYS)
-.env
-.env.local
-.env.development
-.env.production
-
-# Virtual environments
-.venv/
-venv/
-env/
-ENV/
+# Carpeta personalizada para ignorar
+tokenizador/
