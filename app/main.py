@@ -145,6 +145,15 @@ def create_message(message: TextInput, db: Session = Depends(get_db)):
     db.add(new_message)
     db.commit()
     db.refresh(new_message)
+
+    # Guardar el análisis en Supabase
+    from backend.services.pinecone_service import insert_message_to_supabase
+    insert_message_to_supabase(
+        new_message.text,
+        new_message.confidence,
+        new_message.sentiment
+    )
+
     return new_message
 
 @app.put("/messages/{id}")
