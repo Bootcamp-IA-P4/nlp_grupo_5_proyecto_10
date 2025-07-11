@@ -1,9 +1,9 @@
 import axios from "axios";
 
-// Base URL for the API
+// Base URL for the API - Make sure this matches your backend
 const API_BASE_URL = "http://localhost:8000";
 
-// Create axios instance with default config
+// Create axios instance with default config and better error handling
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -12,11 +12,17 @@ const api = axios.create({
   },
 });
 
-// Add response interceptor for error handling
+// Add response interceptor for better error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error("API Error:", error);
+    if (error.code === "ERR_NETWORK") {
+      console.error("Network error - is the backend running on port 8000?");
+    }
+    if (error.response?.status === 404) {
+      console.error("Endpoint not found - check backend routes");
+    }
     return Promise.reject(error);
   }
 );

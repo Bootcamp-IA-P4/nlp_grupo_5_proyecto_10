@@ -48,9 +48,8 @@ except Exception as e:
         logger.warning(f"⚠️ No se pudo cargar ningún modelo: {e2}")
 
 # Load embedding model (from teammate - better than your hash fallback)
-from sentence_transformers import SentenceTransformer
-
 try:
+    from sentence_transformers import SentenceTransformer
     embedder = SentenceTransformer('all-MiniLM-L6-v2')
     logger.info("✅ SentenceTransformer cargado correctamente")
 except Exception as e:
@@ -59,15 +58,18 @@ except Exception as e:
 
 def get_embedding(text):
     if embedder:
-        # Use real embeddings (teammate's improvement)
-        embedding = embedder.encode(text).tolist()
-        return json.dumps(embedding)
-    else:
-        # Fallback to your hash method
-        import hashlib
-        hash_obj = hashlib.md5(text.encode())
-        embedding = [ord(c) for c in hash_obj.hexdigest()[:10]]
-        return json.dumps(embedding)
+        try:
+            # Use real embeddings (teammate's improvement)
+            embedding = embedder.encode(text).tolist()
+            return json.dumps(embedding)
+        except Exception as e:
+            logger.warning(f"Error generating real embedding: {e}")
+    
+    # Fallback to your hash method
+    import hashlib
+    hash_obj = hashlib.md5(text.encode())
+    embedding = [ord(c) for c in hash_obj.hexdigest()[:10]]
+    return json.dumps(embedding)
 
 def predict_sentiment(text):
     """Enhanced prediction with HuggingFace + fallback"""
@@ -94,6 +96,7 @@ def predict_sentiment(text):
                 sentiment = 'not toxic'
             
             confidence = probs.max().item()
+            logger.info(f"HuggingFace prediction: {sentiment} ({confidence:.3f})")
             return sentiment, confidence
             
         except Exception as e:
@@ -110,13 +113,14 @@ def predict_sentiment(text):
                 confidence = float(max(prediction_proba[0]))
             except:
                 confidence = 0.75
-                
+            
+            logger.info(f"Pipeline prediction: {sentiment} ({confidence:.3f})")
             return sentiment, confidence
         except Exception as e:
             logger.error(f"Error con pipeline: {e}")
     
     # Final fallback (your word-based method)
-    toxic_words = ["hate", "stupid", "idiot", "kill", "die", "worst"]
+    toxic_words = ["hate", "stupid", "idiot", "kill", "die", "worst", "fuck", "shit", "damn"]
     text_lower = text.lower()
     toxic_count = sum(1 for word in toxic_words if word in text_lower)
     
@@ -127,6 +131,7 @@ def predict_sentiment(text):
         sentiment = "not toxic"
         confidence = 0.7
     
+    logger.info(f"Fallback prediction: {sentiment} ({confidence:.3f})")
     return sentiment, confidence
 
 # App
@@ -136,11 +141,10 @@ app = FastAPI(
     version="1.0"
 )
 
-# CORS
-origins = ["http://localhost:5173"]
+# CORS - More permissive for development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # Allow all origins for development
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -171,15 +175,25 @@ class YouTubeAnalysisRequest(BaseModel):
 def save_to_supabase(message_data):
     """Save to Supabase if available"""
     try:
+        # Import from the existing service file
         from backend.services.pinecone_service import insert_message_to_supabase
-        insert_message_to_supabase(
+        success = insert_message_to_supabase(
             message_data.text,
             message_data.confidence,
             message_data.sentiment
         )
-        logger.info("💾 Datos guardados en Supabase")
+        if success:
+            logger.info("💾 Datos guardados en Supabase exitosamente")
+            return True
+        else:
+            logger.warning("⚠️ No se pudo guardar en Supabase")
+            return False
+    except ImportError as e:
+        logger.warning(f"⚠️ Servicio Supabase no disponible: {e}")
+        return False
     except Exception as e:
-        logger.warning(f"No se pudo guardar en Supabase: {e}")
+        logger.warning(f"⚠️ Error al guardar en Supabase: {e}")
+        return False
 
 # Health check endpoint
 @app.get("/health")
@@ -449,3 +463,23 @@ def test_youtube_service():
         return {"status": "YouTube service available", "path": backend_services_path}
     except Exception as e:
         return {"status": "YouTube service not available", "error": str(e)}
+
+# Add new endpoint to test Supabase connection
+@app.get("/test-supabase")
+def test_supabase():
+    try:
+        from backend.services.pinecone_service import insert_message_to_supabase
+        # Test with a dummy message
+        test_success = insert_message_to_supabase(
+            "Test connection message",
+            0.85,
+            "not toxic"
+        )
+        if test_success:
+            return {"status": "success", "message": "Supabase connection working"}
+        else:
+            return {"status": "error", "message": "Supabase connection failed"}
+    except ImportError as e:
+        return {"status": "error", "message": f"Supabase service not available: {str(e)}"}
+    except Exception as e:
+        return {"status": "error", "message": f"Supabase test failed: {str(e)}"}
