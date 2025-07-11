@@ -114,3 +114,5 @@ frontend/lib-cov/
 frontend/logs/
 frontend/*.tgz
 frontend/*.tar.gz
+tokenizador/model.safetensors
+*.safetensors
