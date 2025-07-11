@@ -1,16 +1,20 @@
 // frontend/src/pages/DashboardPage.jsx
 import React, { useState, useEffect } from "react";
-import CardKPI from "../components/cards/CardKPI";
-import ChartToxicity from "../components/charts/ChartToxicity";
-import ProfileCard from "../components/cards/ProfileCard";
-import ChartCategories from "../components/charts/ChartCategories";
-import ChartRoles from "../components/charts/ChartRoles";
-import ChartTopWords from "../components/charts/ChartTopWords";
-import ChartToxicityOverTime from "../components/charts/ChartToxicityOverTime";
 import { getMessages } from "../services/messageService";
 import StatsCard from "../components/dashboard/StatsCard";
 import SentimentChart from "../components/dashboard/SentimentChart";
 import RecentMessages from "../components/dashboard/RecentMessages";
+import CircularConfidenceChart from "../components/dashboard/CircularConfidenceChart";
+import ConcentricGrowthChart from "../components/dashboard/ConcentricGrowthChart";
+import ToxicityTypesChart from "../components/dashboard/ToxicityTypesChart";
+import VideoAnalysisChart from "../components/dashboard/VideoAnalysisChart";
+import ToxicityTimelineChart from "../components/dashboard/ToxicityTimelineChart";
+import SeasonalToxicityChart from "../components/dashboard/SeasonalToxicityChart";
+import YearlyTrendChart from '../components/dashboard/YearlyTrendChart';
+import MonthlyTrendChart from '../components/dashboard/MonthlyTrendChart';
+import SeasonalChart from '../components/dashboard/SeasonalChart';
+import WeeklyChart from '../components/dashboard/WeeklyChart';
+import HourlyChart from '../components/dashboard/HourlyChart';
 
 const DashboardPage = () => {
   const [stats, setStats] = useState({
@@ -19,6 +23,7 @@ const DashboardPage = () => {
     notToxic: 0,
     accuracy: 0,
   });
+  const [messages, setMessages] = useState([]);
   const [recentMessages, setRecentMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,11 +33,14 @@ const DashboardPage = () => {
 
   const loadDashboardData = async () => {
     try {
-      const messages = await getMessages();
+      const messagesData = await getMessages();
+      setMessages(messagesData);
 
       // Calculate stats
-      const total = messages.length;
-      const toxic = messages.filter((msg) => msg.sentiment === "toxic").length;
+      const total = messagesData.length;
+      const toxic = messagesData.filter(
+        (msg) => msg.sentiment === "toxic"
+      ).length;
       const notToxic = total - toxic;
 
       setStats({
@@ -44,7 +52,7 @@ const DashboardPage = () => {
       });
 
       // Get recent messages (last 5)
-      setRecentMessages(messages.slice(-5).reverse());
+      setRecentMessages(messagesData.slice(-5).reverse());
     } catch (error) {
       console.error("Error loading dashboard data:", error);
     } finally {
@@ -63,93 +71,99 @@ const DashboardPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      {/* Header */}
-      <header className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-        <h1 className="text-3xl font-extrabold text-purple-700 dark:text-purple-400">
-          Control Panel
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-3xl font-extrabold text-purple-800 dark:text-purple-300 mb-2">
+          NLP Sentiment Analysis Dashboard
         </h1>
-        {/* Here you could place a profile button or notifications */}
-      </header>
+        <p className="text-gray-600 dark:text-gray-400">
+          Monitor and analyze message sentiment predictions in real-time
+        </p>
+      </div>
 
-      {/* Content */}
-      <main className="flex flex-1 overflow-hidden p-6 space-x-6">
-        {/* KPI sidebar */}
-        <aside className="w-72 flex flex-col space-y-6">
-          <CardKPI title="Toxicity %" value="27%" />
-          <CardKPI title="Total Messages" value="1,250" />
-          <CardKPI title="Avg Response Time" value="2.3h" />
-        </aside>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatsCard
+          title="Total Messages"
+          value={stats.total}
+          icon="📊"
+          color="blue"
+        />
+        <StatsCard
+          title="Toxic Messages"
+          value={stats.toxic}
+          icon="⚠️"
+          color="red"
+        />
+        <StatsCard
+          title="Safe Messages"
+          value={stats.notToxic}
+          icon="✅"
+          color="green"
+        />
+        <StatsCard
+          title="Model Accuracy"
+          value={`${stats.accuracy}%`}
+          icon="🎯"
+          color="purple"
+        />
+      </div>
 
-        {/* Main charts and profile panel */}
-        <section className="flex-1 flex flex-col space-y-6 overflow-auto">
-          <ProfileCard />
-          <ChartToxicity />
-          <ChartCategories />
-          <ChartRoles />
-          <ChartTopWords />
-          <ChartToxicityOverTime />
-          {/* Add additional charts or widgets here */}
-        </section>
-      </main>
+      {/* Temporal Analysis Section - 5 Small Charts */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">
+          Temporal Toxicity Analysis
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+            <YearlyTrendChart messages={messages} />
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+            <MonthlyTrendChart messages={messages} />
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+            <SeasonalChart messages={messages} />
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+            <WeeklyChart messages={messages} />
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+            <HourlyChart messages={messages} />
+          </div>
+        </div>
+      </div>
 
-      <div className="p-6 max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-purple-800 dark:text-purple-300 mb-2">
-            NLP Sentiment Analysis Dashboard
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Monitor and analyze message sentiment predictions in real-time
-          </p>
+      {/* Original Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
+            Interactive Sentiment Visualization
+          </h2>
+          <SentimentChart
+            toxic={stats.toxic}
+            notToxic={stats.notToxic}
+            messages={messages}
+          />
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatsCard
-            title="Total Messages"
-            value={stats.total}
-            icon="📊"
-            color="blue"
-          />
-          <StatsCard
-            title="Toxic Messages"
-            value={stats.toxic}
-            icon="⚠️"
-            color="red"
-          />
-          <StatsCard
-            title="Safe Messages"
-            value={stats.notToxic}
-            icon="✅"
-            color="green"
-          />
-          <StatsCard
-            title="Model Accuracy"
-            value={`${stats.accuracy}%`}
-            icon="🎯"
-            color="purple"
-          />
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+          <ToxicityTypesChart messages={messages} />
         </div>
 
-        {/* Charts and Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
-              Interactive Sentiment Visualization
-            </h2>
-            <SentimentChart
-              toxic={stats.toxic}
-              notToxic={stats.notToxic}
-              messages={recentMessages}
-            />
-          </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+          <VideoAnalysisChart messages={messages} />
+        </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
-              Recent Predictions
-            </h2>
-            <RecentMessages messages={recentMessages} />
-          </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
+            Recent Predictions
+          </h2>
+          <RecentMessages messages={recentMessages} />
         </div>
       </div>
     </div>
