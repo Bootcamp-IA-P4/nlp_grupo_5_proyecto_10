@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { getMessages, deleteMessage } from "../../services/messageService";
 import EditMessageModal from "../forms/EditMessageModal";
+import ConfidenceStars from "../common/ConfidenceStars";
 
 export default function MessagesTable({ refreshTrigger }) {
   const [messages, setMessages] = useState([]);
@@ -95,6 +96,7 @@ export default function MessagesTable({ refreshTrigger }) {
               <th className="px-4 py-2">ID</th>
               <th className="px-4 py-2">Text</th>
               <th className="px-4 py-2">Sentiment</th>
+              <th className="px-4 py-2">Confidence</th>
               <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
@@ -102,7 +104,7 @@ export default function MessagesTable({ refreshTrigger }) {
             {messages.length === 0 ? (
               <tr>
                 <td
-                  colSpan="4"
+                  colSpan="5"
                   className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
                 >
                   No messages found. Create your first message above!
@@ -115,7 +117,9 @@ export default function MessagesTable({ refreshTrigger }) {
                   className="text-center border-b dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-purple-900"
                 >
                   <td className="px-4 py-2 dark:text-gray-200">{msg.id}</td>
-                  <td className="px-4 py-2 dark:text-gray-200">{msg.text}</td>
+                  <td className="px-4 py-2 dark:text-gray-200 text-left max-w-xs truncate">
+                    {msg.text}
+                  </td>
                   <td className="px-4 py-2">
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-semibold ${getSentimentStyle(
@@ -124,6 +128,12 @@ export default function MessagesTable({ refreshTrigger }) {
                     >
                       {getSentimentLabel(msg.sentiment)}
                     </span>
+                  </td>
+                  <td className="px-4 py-2">
+                    <ConfidenceStars
+                      sentiment={msg.sentiment}
+                      confidence={msg.confidence}
+                    />
                   </td>
                   <td className="px-4 py-2">
                     <button

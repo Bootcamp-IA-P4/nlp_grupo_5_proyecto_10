@@ -25,6 +25,7 @@ venv.bak/
 database/.env
 database/config.ini
 *.db
+messages.db
 
 # Supabase
 .supabase/
