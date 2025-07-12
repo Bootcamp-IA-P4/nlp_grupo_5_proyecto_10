@@ -1,0 +1,13 @@
+@echo off
+echo Starting FastAPI server on port 8000...
+cd /d "%~dp0"
+echo Current directory: %CD%
+echo Checking if run_server.py exists...
+if exist run_server.py (
+    echo Found run_server.py, starting server with Supabase integration...
+    python run_server.py
+) else (
+    echo run_server.py not found, trying direct uvicorn...
+    uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+)
+pause
