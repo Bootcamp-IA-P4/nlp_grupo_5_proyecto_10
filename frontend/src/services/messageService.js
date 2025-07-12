@@ -66,3 +66,49 @@ export const updateMessage = async (id, text) => {
     throw error;
   }
 };
+
+// Add this new function for filtered messages
+export const getFilteredMessages = async (
+  filters = {},
+  page = 1,
+  limit = 100
+) => {
+  try {
+    const params = new URLSearchParams();
+
+    // Add filters to params
+    if (filters.sentiment) params.append("sentiment", filters.sentiment);
+    if (filters.source) params.append("source", filters.source);
+    if (filters.confidence_min)
+      params.append("confidence_min", filters.confidence_min);
+    if (filters.confidence_max)
+      params.append("confidence_max", filters.confidence_max);
+    if (filters.search_text) params.append("search_text", filters.search_text);
+
+    // Add pagination
+    params.append("limit", limit);
+    params.append("offset", (page - 1) * limit);
+
+    const response = await api.get(`/messages/search?${params.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error("API Error:", error);
+    if (error.code === "ERR_NETWORK") {
+      console.error("Network error - is the backend running on port 8000?");
+    }
+    throw error;
+  }
+};
+
+export const messageService = {
+  // Get filter options
+  async getFilterOptions() {
+    try {
+      const response = await api.get("/messages/filter-options");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching filter options:", error);
+      throw error;
+    }
+  },
+};

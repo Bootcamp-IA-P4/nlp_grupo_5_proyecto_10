@@ -1,32 +1,67 @@
 // frontend/src/components/tables/MessagesTable.jsx
 import React, { useEffect, useState } from "react";
-import { getMessages, deleteMessage } from "../../services/messageService";
+import {
+  getMessages,
+  getFilteredMessages,
+  deleteMessage,
+} from "../../services/messageService";
 import EditMessageModal from "../forms/EditMessageModal";
 import ConfidenceStars from "../common/ConfidenceStars";
+import MessageFilters from "./MessageFilters";
 
 export default function MessagesTable({ refreshTrigger }) {
   const [messages, setMessages] = useState([]);
+  const [filteredData, setFilteredData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [editingMessage, setEditingMessage] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     loadMessages();
   }, [refreshTrigger]);
 
-  const loadMessages = async () => {
+  // Load messages based on filters
+  const loadMessages = async (filters = {}, page = 1) => {
     setLoading(true);
     setError("");
     try {
-      const data = await getMessages();
-      setMessages(data);
+      if (Object.values(filters).some((value) => value !== "")) {
+        // Use filtered search
+        const data = await getFilteredMessages(filters, page);
+        setFilteredData(data);
+        setMessages(data.messages || []);
+      } else {
+        // Use original method for no filters
+        const data = await getMessages();
+        setMessages(Array.isArray(data) ? data : data.messages || []);
+        setFilteredData(null);
+      }
     } catch (err) {
       setError("Failed to load messages");
       console.error("Error loading messages:", err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFiltersChange = (filters) => {
+    setActiveFilters(filters);
+    setCurrentPage(1);
+    loadMessages(filters, 1);
+  };
+
+  const handleClearFilters = () => {
+    setActiveFilters({});
+    setCurrentPage(1);
+    loadMessages({}, 1);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    loadMessages(activeFilters, page);
   };
 
   const handleDelete = async (id) => {
@@ -83,6 +118,23 @@ export default function MessagesTable({ refreshTrigger }) {
 
   return (
     <>
+      {/* Add Filters */}
+      <MessageFilters
+        onFiltersChange={handleFiltersChange}
+        onClear={handleClearFilters}
+      />
+
+      {/* Results Info */}
+      {filteredData && (
+        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 rounded">
+          <p>
+            📊 Showing {filteredData.messages?.length || 0} of{" "}
+            {filteredData.total || 0} results
+            {filteredData.has_more && ` (Page ${currentPage})`}
+          </p>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         {error && (
           <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded">
@@ -108,7 +160,9 @@ export default function MessagesTable({ refreshTrigger }) {
                   colSpan="6"
                   className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
                 >
-                  No messages found. Create your first message above!
+                  {Object.values(activeFilters).some((value) => value !== "")
+                    ? "No messages found matching the selected filters."
+                    : "No messages found. Create your first message above!"}
                 </td>
               </tr>
             ) : (
@@ -179,6 +233,29 @@ export default function MessagesTable({ refreshTrigger }) {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {filteredData && filteredData.total > filteredData.limit && (
+        <div className="flex justify-center items-center mt-4 space-x-2">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage <= 1}
+            className="px-4 py-2 bg-purple-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-700"
+          >
+            Previous
+          </button>
+          <span className="px-4 py-2 text-gray-700 dark:text-gray-300">
+            Page {currentPage}
+          </span>
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={!filteredData.has_more}
+            className="px-4 py-2 bg-purple-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-700"
+          >
+            Next
+          </button>
+        </div>
+      )}
 
       <EditMessageModal
         message={editingMessage}
