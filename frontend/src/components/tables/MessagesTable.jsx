@@ -25,38 +25,60 @@ export default function MessagesTable({ refreshTrigger }) {
 
   // Load messages based on filters
   const loadMessages = async (filters = {}, page = 1) => {
+    // Prevent multiple simultaneous requests
+    if (loading) return;
+
     setLoading(true);
     setError("");
+
     try {
+      // Add small delay to prevent rapid-fire requests
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       if (Object.values(filters).some((value) => value !== "")) {
         // Use filtered search
+        console.log("Loading filtered messages with:", filters);
         const data = await getFilteredMessages(filters, page);
         setFilteredData(data);
         setMessages(data.messages || []);
       } else {
         // Use original method for no filters
+        console.log("Loading all messages");
         const data = await getMessages();
         setMessages(Array.isArray(data) ? data : data.messages || []);
         setFilteredData(null);
       }
     } catch (err) {
-      setError("Failed to load messages");
       console.error("Error loading messages:", err);
+      setError("Failed to load messages. Please check your connection.");
+      setMessages([]);
     } finally {
       setLoading(false);
     }
   };
 
   const handleFiltersChange = (filters) => {
-    setActiveFilters(filters);
-    setCurrentPage(1);
-    loadMessages(filters, 1);
+    try {
+      console.log("Filters changed:", filters);
+      setActiveFilters(filters);
+      setCurrentPage(1);
+      loadMessages(filters, 1);
+    } catch (error) {
+      console.error("Error handling filter change:", error);
+      setError("Error applying filters");
+    }
   };
 
   const handleClearFilters = () => {
-    setActiveFilters({});
-    setCurrentPage(1);
-    loadMessages({}, 1);
+    try {
+      console.log("Clearing filters");
+      setActiveFilters({});
+      setCurrentPage(1);
+      loadMessages({}, 1);
+    } catch (error) {
+      console.error("Error clearing filters:", error);
+      setError("Error clearing filters");
+    }
   };
 
   const handlePageChange = (page) => {

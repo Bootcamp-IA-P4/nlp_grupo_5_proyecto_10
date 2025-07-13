@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 
 const MessageFilters = ({ onFiltersChange, onClear }) => {
   const [filters, setFilters] = useState({
@@ -9,13 +9,50 @@ const MessageFilters = ({ onFiltersChange, onClear }) => {
     search_text: "",
   });
 
+  // Use useRef for debounce timeout
+  const debounceTimeout = useRef(null);
+
   const handleFilterChange = (key, value) => {
+    // Validate confidence values
+    if (key === "confidence_min" || key === "confidence_max") {
+      if (value !== "" && (isNaN(value) || value < 0 || value > 1)) {
+        return; // Don't update if invalid
+      }
+    }
+
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-    onFiltersChange(newFilters);
+
+    // Clear existing timeout
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+
+    // For text search, use debounced update
+    if (key === "search_text") {
+      debounceTimeout.current = setTimeout(() => {
+        try {
+          onFiltersChange(newFilters);
+        } catch (error) {
+          console.error("Filter change error:", error);
+        }
+      }, 800); // Increased delay to 800ms
+    } else {
+      // For dropdowns and confidence, update immediately
+      try {
+        onFiltersChange(newFilters);
+      } catch (error) {
+        console.error("Filter change error:", error);
+      }
+    }
   };
 
   const handleClear = () => {
+    // Clear any pending timeouts
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+
     const clearedFilters = {
       sentiment: "",
       source: "",
@@ -24,7 +61,12 @@ const MessageFilters = ({ onFiltersChange, onClear }) => {
       search_text: "",
     };
     setFilters(clearedFilters);
-    onClear();
+
+    try {
+      onClear();
+    } catch (error) {
+      console.error("Clear filters error:", error);
+    }
   };
 
   return (
@@ -79,7 +121,7 @@ const MessageFilters = ({ onFiltersChange, onClear }) => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Min Confidence
+            Min Confidence (0-1)
           </label>
           <input
             type="number"
