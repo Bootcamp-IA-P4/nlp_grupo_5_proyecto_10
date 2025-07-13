@@ -1,0 +1,43 @@
+
+version: '3.8'
+
+services:
+  backendpremium:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - SUPABASE_DB_PASSWORD=${SUPABASE_DB_PASSWORD}
+      - DATABASE_URL=${DATABASE_URL}
+      - API_KEY=${API_KEY}
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    networks:
+      - app-network
+    volumes:
+      - ./models:/backendpremium/models
+      - ./data:/backendpremium/data
+
+  frontendpremium:
+    build:
+      context: .
+      dockerfile: DockerfileF
+    env_file:
+      - .env
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backendpremium
+    restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

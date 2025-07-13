@@ -1,0 +1,66 @@
+############################################################
+# 1. Imagen base para Node.js (Frontend React/Vite)
+############################################################
+FROM node:20-slim
+# Solo necesitas Node.js para el frontend React/Vite.
+# No incluyas Python si el frontend no usa código Python.
+
+############################################################
+# 2. Directorio de trabajo para el frontend
+############################################################
+WORKDIR /frontendpremium
+# Establece el directorio de trabajo en el contenedor como /frontend.
+
+############################################################
+# 3. Copia el código fuente y archivos de configuración del frontend
+############################################################
+COPY frontend/package.json ./
+COPY frontend/package-lock.json ./
+# Copia los archivos de configuración de dependencias Node.js desde la carpeta frontend.
+
+COPY frontend/ ./
+# COPY node_modules/ ./
+# Copia todo el código fuente del frontend (src/, public/, etc.) desde la carpeta frontend al contenedor.
+
+############################################################
+# 4. Instalación de dependencias Node.js
+############################################################
+RUN npm install
+# Instala las dependencias Node.js necesarias para el frontend.
+
+############################################################
+# 5. Exponer el puerto para el servidor de desarrollo (Vite/React)
+############################################################
+EXPOSE 5173
+# Expone el puerto 5173, que es el puerto por defecto para Vite/React.
+
+############################################################
+# 6. Comando de inicio para el frontend
+############################################################
+CMD ["npm", "run", "dev", "--", "--host"]
+# CMD ["npm", "run", "dev"]
+# Inicia el servidor de desarrollo del frontend con npm run dev.
+
+############################################################
+# Índice de pasos y estructura esperada
+############################################################
+# 1. Usa una imagen ligera de Node.js para el frontend.
+# 2. Establece el directorio de trabajo en /frontend.
+# 3. Copia los archivos de configuración (package.json, package-lock.json) y el código fuente (src/, public/, etc.) desde la carpeta frontend al contenedor.
+# 4. Instala las dependencias Node.js con npm install.
+# 5. Expone el puerto 5173 (por defecto para Vite/React).
+# 6. Inicia el servidor de desarrollo con npm run dev.
+
+############################################################
+# Estructura de carpetas esperada en el proyecto
+############################################################
+# proyecto/
+# ├── backend/
+# ├── frontend/
+# │   ├── package.json
+# │   ├── package-lock.json
+# │   ├── src/
+# │   ├── public/
+# │   └── ...
+# ├── requirements.txt
+# ├── Dockerfile (en la raíz,
