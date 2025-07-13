@@ -76,18 +76,28 @@ export const getFilteredMessages = async (
   try {
     const params = new URLSearchParams();
 
-    // Add filters to params
-    if (filters.sentiment) params.append("sentiment", filters.sentiment);
-    if (filters.source) params.append("source", filters.source);
-    if (filters.confidence_min)
+    // Add filters to params with validation
+    if (filters.sentiment && filters.sentiment.trim()) {
+      params.append("sentiment", filters.sentiment);
+    }
+    if (filters.source && filters.source.trim()) {
+      params.append("source", filters.source);
+    }
+    if (filters.confidence_min && !isNaN(filters.confidence_min)) {
       params.append("confidence_min", filters.confidence_min);
-    if (filters.confidence_max)
+    }
+    if (filters.confidence_max && !isNaN(filters.confidence_max)) {
       params.append("confidence_max", filters.confidence_max);
-    if (filters.search_text) params.append("search_text", filters.search_text);
+    }
+    if (filters.search_text && filters.search_text.trim()) {
+      params.append("search_text", filters.search_text.trim());
+    }
 
     // Add pagination
     params.append("limit", limit);
     params.append("offset", (page - 1) * limit);
+
+    console.log("Filtering with params:", params.toString()); // Debug log
 
     const response = await api.get(`/messages/search?${params.toString()}`);
     return response.data;
