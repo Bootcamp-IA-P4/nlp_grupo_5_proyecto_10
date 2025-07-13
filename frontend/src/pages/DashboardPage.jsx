@@ -1,31 +1,15 @@
 // frontend/src/pages/DashboardPage.jsx
-import React, { useState, useEffect } from "react";
-import { getMessages } from "../services/messageService";
-import StatsCard from "../components/dashboard/StatsCard";
-import SentimentChart from "../components/dashboard/SentimentChart";
-import RecentMessages from "../components/dashboard/RecentMessages";
-import CircularConfidenceChart from "../components/dashboard/CircularConfidenceChart";
-import ConcentricGrowthChart from "../components/dashboard/ConcentricGrowthChart";
-import ToxicityTypesChart from "../components/dashboard/ToxicityTypesChart";
-import VideoAnalysisChart from "../components/dashboard/VideoAnalysisChart";
-import ToxicityTimelineChart from "../components/dashboard/ToxicityTimelineChart";
-import SeasonalToxicityChart from "../components/dashboard/SeasonalToxicityChart";
-import YearlyTrendChart from '../components/dashboard/YearlyTrendChart';
-import MonthlyTrendChart from '../components/dashboard/MonthlyTrendChart';
-import SeasonalChart from '../components/dashboard/SeasonalChart';
-import WeeklyChart from '../components/dashboard/WeeklyChart';
-import HourlyChart from '../components/dashboard/HourlyChart';
+import React, { useEffect, useState } from "react";
+import { dashboardService } from "../services/dashboardService";
+import DashboardCharts from "../components/dashboard/DashboardCharts";
 
 const DashboardPage = () => {
-  const [stats, setStats] = useState({
-    total: 0,
-    toxic: 0,
-    notToxic: 0,
-    accuracy: 0,
-  });
-  const [messages, setMessages] = useState([]);
-  const [recentMessages, setRecentMessages] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
+  const [videoComparison, setVideoComparison] = useState(null);
+  const [toxicityPatterns, setToxicityPatterns] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -33,28 +17,45 @@ const DashboardPage = () => {
 
   const loadDashboardData = async () => {
     try {
-      const messagesData = await getMessages();
-      setMessages(messagesData);
+      setLoading(true);
 
-      // Calculate stats
-      const total = messagesData.length;
-      const toxic = messagesData.filter(
-        (msg) => msg.sentiment === "toxic"
-      ).length;
-      const notToxic = total - toxic;
+      // Load stats first (most reliable)
+      const statsData = await dashboardService.getStats();
+      setStats(statsData);
 
-      setStats({
-        total,
-        toxic,
-        notToxic,
-        accuracy:
-          total > 0 ? (((notToxic + toxic) / total) * 100).toFixed(1) : 0,
-      });
+      // Try to load analytics with fallback
+      try {
+        const analyticsData = await dashboardService.getAnalytics();
+        setAnalytics(analyticsData);
+      } catch (analyticsError) {
+        console.warn("Analytics failed:", analyticsError);
+        setAnalytics({ error: "Analytics temporarily unavailable" });
+      }
 
-      // Get recent messages (last 5)
-      setRecentMessages(messagesData.slice(-5).reverse());
-    } catch (error) {
-      console.error("Error loading dashboard data:", error);
+      // Try to load video comparison with fallback
+      try {
+        const videoData = await dashboardService.getVideoComparison();
+        setVideoComparison(videoData);
+      } catch (videoError) {
+        console.warn("Video comparison failed:", videoError);
+        setVideoComparison({
+          error: "Video comparison temporarily unavailable",
+        });
+      }
+
+      // Try to load toxicity patterns with fallback
+      try {
+        const patternsData = await dashboardService.getToxicityPatterns();
+        setToxicityPatterns(patternsData);
+      } catch (patternsError) {
+        console.warn("Toxicity patterns failed:", patternsError);
+        setToxicityPatterns({
+          error: "Toxicity patterns temporarily unavailable",
+        });
+      }
+    } catch (err) {
+      setError("Failed to load basic dashboard data");
+      console.error("Dashboard error:", err);
     } finally {
       setLoading(false);
     }
@@ -62,7 +63,7 @@ const DashboardPage = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex justify-center items-center p-8">
         <div className="text-purple-600 dark:text-purple-400">
           Loading dashboard...
         </div>
@@ -71,101 +72,148 @@ const DashboardPage = () => {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-purple-800 dark:text-purple-300 mb-2">
-          NLP Sentiment Analysis Dashboard
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          📊 Analytics Dashboard
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Monitor and analyze message sentiment predictions in real-time
+          Deep insights into comment sentiment patterns and toxicity analysis
         </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatsCard
-          title="Total Messages"
-          value={stats.total}
-          icon="📊"
-          color="blue"
-        />
-        <StatsCard
-          title="Toxic Messages"
-          value={stats.toxic}
-          icon="⚠️"
-          color="red"
-        />
-        <StatsCard
-          title="Safe Messages"
-          value={stats.notToxic}
-          icon="✅"
-          color="green"
-        />
-        <StatsCard
-          title="Model Accuracy"
-          value={`${stats.accuracy}%`}
-          icon="🎯"
-          color="purple"
-        />
-      </div>
+      {/* Quick Stats Cards */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <span className="text-2xl">💬</span>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Total Messages
+                </p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                  {stats.total_messages}
+                </p>
+              </div>
+            </div>
+          </div>
 
-      {/* Temporal Analysis Section - 5 Small Charts */}
-      <div className="mt-8">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">
-          Temporal Toxicity Analysis
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
-            <YearlyTrendChart messages={messages} />
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <div className="flex items-center">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <span className="text-2xl">⚠️</span>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Toxicity Rate
+                </p>
+                <p className="text-2xl font-semibold text-red-600">
+                  {stats.toxicity_rate}%
+                </p>
+              </div>
+            </div>
           </div>
-          
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
-            <MonthlyTrendChart messages={messages} />
+
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <div className="flex items-center">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <span className="text-2xl">📺</span>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  YouTube Comments
+                </p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                  {stats.youtube_messages}
+                </p>
+              </div>
+            </div>
           </div>
-          
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
-            <SeasonalChart messages={messages} />
-          </div>
-          
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
-            <WeeklyChart messages={messages} />
-          </div>
-          
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
-            <HourlyChart messages={messages} />
+
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <span className="text-2xl">🎯</span>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Avg Confidence
+                </p>
+                <p className="text-2xl font-semibold text-green-600">
+                  {stats.avg_confidence}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Original Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
-            Interactive Sentiment Visualization
-          </h2>
-          <SentimentChart
-            toxic={stats.toxic}
-            notToxic={stats.notToxic}
-            messages={messages}
-          />
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+          <p className="text-red-800 dark:text-red-200">{error}</p>
         </div>
+      )}
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <ToxicityTypesChart messages={messages} />
-        </div>
+      {/* Professional Charts Component */}
+      <DashboardCharts />
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <VideoAnalysisChart messages={messages} />
-        </div>
+      {/* Keep existing analytics summary as fallback/additional detail */}
+      {analytics &&
+        !analytics.error &&
+        toxicityPatterns &&
+        !toxicityPatterns.error && (
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+              📋 Detailed Analytics Summary
+            </h2>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
-            Recent Predictions
-          </h2>
-          <RecentMessages messages={recentMessages} />
-        </div>
-      </div>
+            {/* Toxicity Patterns Summary */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4">
+                🔍 Toxicity Pattern Analysis
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
+                  <h4 className="font-semibold text-red-800 dark:text-red-200 mb-2">
+                    Toxic Comments
+                  </h4>
+                  <p className="text-sm">
+                    Average Length:{" "}
+                    {toxicityPatterns.toxic_patterns?.avg_text_length} chars
+                  </p>
+                  <p className="text-sm">
+                    Total Count: {toxicityPatterns.toxic_patterns?.total_count}
+                  </p>
+                  <p className="text-sm">
+                    Avg Confidence:{" "}
+                    {toxicityPatterns.toxic_patterns?.avg_confidence}
+                  </p>
+                </div>
+                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                  <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2">
+                    Non-Toxic Comments
+                  </h4>
+                  <p className="text-sm">
+                    Average Length:{" "}
+                    {toxicityPatterns.non_toxic_patterns?.avg_text_length} chars
+                  </p>
+                  <p className="text-sm">
+                    Total Count:{" "}
+                    {toxicityPatterns.non_toxic_patterns?.total_count}
+                  </p>
+                  <p className="text-sm">
+                    Avg Confidence:{" "}
+                    {toxicityPatterns.non_toxic_patterns?.avg_confidence}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 };

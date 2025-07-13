@@ -1,119 +1,130 @@
-# Python
+# Dependencies
+node_modules/
+*/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Frontend build
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+# Backend
 __pycache__/
 *.py[cod]
+*$py.class
 *.so
 .Python
-*.egg-info/
-dist/
 build/
-.python-version
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Jupyter Notebook
-.ipynb_checkpoints
-*/.ipynb_checkpoints/*
-
-# Entornos virtuales
+# Environment variables
 .env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Configuración de bases de datos
-database/.env
-database/config.ini
-*.db
-messages.db
-
-# Supabase
-.supabase/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# Logs y cache
+# Logs
 *.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Models (large files)
+models/*.pkl
+models/*.joblib
+models/*.safetensors
+tokenizador/
+!models/.gitkeep
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# pytest
 .pytest_cache/
 .coverage
 
-# Streamlit cache (temporal)
-.streamlit/secrets.toml
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
 
-/.qodo
-/htmlcov
-/tests/htmlcov
-/tests/unit/htmlcov
-/tests/integration/htmlcov
+# Package files
+*.tar.gz
+*.zip
 
+# Temporary files
+*.tmp
+*.temp
+.cache/
 
-/tests/test_data.json
-/tests/test_image.png
-/tests/test_image.jpg
-/tests/test_image.jpeg
-
-# MLflow
-mlruns/
-**/mlruns/
-mlartifacts/
-**/mlartifacts/
-
-# Frontend - Node.js
-frontend/node_modules/
-frontend/dist/
-frontend/build/
-frontend/.vite/
-frontend/coverage/
-frontend/.nyc_output/
-frontend/.cache/
-frontend/.parcel-cache/
+# Frontend specific
 frontend/.next/
 frontend/out/
+frontend/.nuxt/
+frontend/.output/
+frontend/.vercel/
+frontend/.netlify/
 
-# Frontend - Package managers
-frontend/package-lock.json
-frontend/yarn.lock
-frontend/pnpm-lock.yaml
+# ESLint
+.eslintcache
 
-# Frontend - Environment and config
-frontend/.env
-frontend/.env.local
-frontend/.env.development.local
-frontend/.env.test.local
-frontend/.env.production.local
+# Optional npm cache directory
+.npm
 
-# Frontend - IDE and editor
-frontend/.vscode/
-frontend/.idea/
-frontend/*.swp
-frontend/*.swo
+# Optional REPL history
+.node_repl_history
 
-# Frontend - OS
-frontend/.DS_Store
-frontend/Thumbs.db
+# Output of 'npm pack'
+*.tgz
 
-# Frontend - Logs
-frontend/npm-debug.log*
-frontend/yarn-debug.log*
-frontend/yarn-error.log*
-frontend/lerna-debug.log*
+# Yarn Integrity file
+.yarn-integrity
 
-# Frontend - Runtime
-frontend/.pnp
-frontend/.pnp.js
-frontend/coverage/
-frontend/lib-cov/
-frontend/logs/
-frontend/*.tgz
-frontend/*.tar.gz
+# parcel-bundler cache (https://parceljs.org/)
+.parcel-cache
 
-# Carpeta personalizada para ignorar
-tokenizador/
+# Zero-installs for yarn v2
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*

@@ -840,73 +840,267 @@ def get_supabase_messages():
     except Exception as e:
         return {"success": False, "error": f"Supabase error: {str(e)}"}
 
-# Timeline analysis endpoint
-@app.get("/messages/timeline")
-def get_timeline_data(db: Session = Depends(get_db)):
-    """Get timeline data for dashboard graphs"""
-    timeline_data = db.query(
+# Replace timeline analysis with meaningful analytics
+@app.get("/messages/analytics")
+def get_analytics_data(db: Session = Depends(get_db)):
+    """Get comprehensive analytics based on available data"""
+    from sqlalchemy import func
+    import re
+    from collections import Counter
+    
+    try:
+        # 1. Sentiment Distribution by Source
+        sentiment_by_source = db.query(
+            models.Message.source,
+            models.Message.sentiment,
+            func.count(models.Message.id).label('count')
+        ).group_by(
+            models.Message.source,
+            models.Message.sentiment
+        ).all()
+        
+        # 2. Simple confidence ranges without complex CASE statements
+        high_confidence = db.query(
+            func.count(models.Message.id).label('count')
+        ).filter(models.Message.confidence >= 0.7).scalar()
+        
+        medium_confidence = db.query(
+            func.count(models.Message.id).label('count')
+        ).filter(
+            models.Message.confidence >= 0.5,
+            models.Message.confidence < 0.7
+        ).scalar()
+        
+        low_confidence = db.query(
+            func.count(models.Message.id).label('count')
+        ).filter(models.Message.confidence < 0.5).scalar()
+        
+        # 3. Top YouTube Channels (simplified query)
+        youtube_channels = db.query(
+            models.Message.youtube_channel,
+            func.count(models.Message.id).label('total_comments')
+        ).filter(
+            models.Message.source == 'youtube',
+            models.Message.youtube_channel.isnot(None)
+        ).group_by(
+            models.Message.youtube_channel
+        ).having(
+            func.count(models.Message.id) >= 3
+        ).order_by(
+            func.count(models.Message.id).desc()
+        ).limit(10).all()
+        
+        # Get toxic counts for each channel separately
+        youtube_channels_with_toxicity = []
+        for channel_row in youtube_channels:
+            toxic_count = db.query(
+                func.count(models.Message.id)
+            ).filter(
+                models.Message.youtube_channel == channel_row.youtube_channel,
+                models.Message.sentiment == 'toxic'
+            ).scalar()
+            
+            avg_confidence = db.query(
+                func.avg(models.Message.confidence)
+            ).filter(
+                models.Message.youtube_channel == channel_row.youtube_channel
+            ).scalar()
+            
+            youtube_channels_with_toxicity.append({
+                "channel": channel_row.youtube_channel,
+                "total_comments": channel_row.total_comments,
+                "toxic_comments": toxic_count,
+                "toxicity_rate": round((toxic_count / channel_row.total_comments * 100), 2) if channel_row.total_comments > 0 else 0,
+                "avg_confidence": round(float(avg_confidence or 0), 3)
+            })
+        
+        # 4. Text length analysis (simplified)
+        short_texts = db.query(func.count(models.Message.id)).filter(func.length(models.Message.text) < 50).scalar()
+        medium_texts = db.query(func.count(models.Message.id)).filter(
+            func.length(models.Message.text) >= 50,
+            func.length(models.Message.text) < 150
+        ).scalar()
+        long_texts = db.query(func.count(models.Message.id)).filter(func.length(models.Message.text) >= 150).scalar()
+        
+        # 5. TOP TOXIC WORDS ANALYSIS (OPTIMIZED)
+        toxic_messages = db.query(models.Message.text).filter(
+            models.Message.sentiment == 'toxic'
+        ).limit(200).all()  # Limit to first 200 toxic messages for performance
+        
+        # Optimized toxic word counter with simpler patterns
+        toxic_words_counter = Counter()
+        
+        # Simplified word list for better performance
+        toxic_words = [
+            'stupid', 'idiot', 'hate', 'worst', 'bad', 'terrible', 'awful', 
+            'horrible', 'disgusting', 'pathetic', 'trash', 'garbage', 'suck', 
+            'sucks', 'damn', 'hell', 'crap', 'dumb', 'moron'
+        ]
+        
+        for message in toxic_messages:
+            text = message.text.lower()
+            # Simple word matching instead of regex for better performance
+            words = text.split()
+            for word in words:
+                # Clean word of punctuation
+                clean_word = ''.join(c for c in word if c.isalpha())
+                if clean_word in toxic_words:
+                    toxic_words_counter[clean_word] += 1
+        
+        # Get top 10 most used toxic words
+        top_toxic_words = [
+            {"word": word, "count": count} 
+            for word, count in toxic_words_counter.most_common(10)
+        ]
+        
+        return {
+            "sentiment_by_source": [
+                {
+                    "source": row.source or "manual",
+                    "sentiment": row.sentiment,
+                    "count": row.count
+                }
+                for row in sentiment_by_source
+            ],
+            "confidence_distribution": [
+                {"confidence_range": "High (0.7+)", "count": high_confidence},
+                {"confidence_range": "Medium (0.5-0.7)", "count": medium_confidence},
+                {"confidence_range": "Low (<0.5)", "count": low_confidence}
+            ],
+            "top_youtube_channels": youtube_channels_with_toxicity,
+            "text_length_vs_sentiment": [
+                {"length_range": "Short (<50 chars)", "count": short_texts},
+                {"length_range": "Medium (50-150 chars)", "count": medium_texts},
+                {"length_range": "Long (150+ chars)", "count": long_texts}
+            ],
+            "top_toxic_words": top_toxic_words
+        }
+    except Exception as e:
+        logger.error(f"Analytics error: {e}")
+        return {
+            "sentiment_by_source": [],
+            "confidence_distribution": [],
+            "top_youtube_channels": [],
+            "text_length_vs_sentiment": [],
+            "top_toxic_words": [],
+            "error": f"Analytics temporarily unavailable: {str(e)}"
+        }
+
+# Enhanced video comparison endpoint
+@app.get("/messages/video-comparison")
+def get_video_comparison(db: Session = Depends(get_db)):
+    """Compare toxicity across different YouTube videos"""
+    from sqlalchemy import func, case
+    
+    try:
+        video_stats = db.query(
+            models.Message.youtube_video_id,
+            models.Message.youtube_video_title,
+            models.Message.youtube_channel,
+            func.count(models.Message.id).label('total_comments'),
+            func.sum(case((models.Message.sentiment == 'toxic', 1)).else_(0)).label('toxic_comments'),
+            func.avg(models.Message.confidence).label('avg_confidence')
+        ).filter(
+            models.Message.source == 'youtube',
+            models.Message.youtube_video_id.isnot(None)
+        ).group_by(
+            models.Message.youtube_video_id,
+            models.Message.youtube_video_title,
+            models.Message.youtube_channel
+        ).having(
+            func.count(models.Message.id) >= 3
+        ).order_by(
+            func.count(models.Message.id).desc()
+        ).limit(10).all()
+        
+        return {
+            "video_comparison": [
+                {
+                    "video_id": row.youtube_video_id,
+                    "video_title": row.youtube_video_title or "Unknown Video",
+                    "channel": row.youtube_channel or "Unknown Channel",
+                    "total_comments": row.total_comments,
+                    "toxic_comments": row.toxic_comments,
+                    "toxicity_rate": round((row.toxic_comments / row.total_comments * 100), 2) if row.total_comments > 0 else 0,
+                    "avg_confidence": round(float(row.avg_confidence or 0), 3)
+                }
+                for row in video_stats
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Video comparison error: {e}")
+        return {
+            "video_comparison": [],
+            "error": f"Video comparison temporarily unavailable: {str(e)}"
+        }
+
+# Toxicity patterns endpoint
+@app.get("/messages/toxicity-patterns")
+def get_toxicity_patterns(db: Session = Depends(get_db)):
+    """Analyze patterns in toxic vs non-toxic content"""
+    from sqlalchemy import func
+    
+    try:
+        # Most common words in toxic vs non-toxic comments (simplified analysis)
+        toxic_stats = db.query(
+            func.avg(func.length(models.Message.text)).label('avg_length'),
+            func.count(models.Message.id).label('count'),
+            func.avg(models.Message.confidence).label('avg_confidence')
+        ).filter(models.Message.sentiment == 'toxic').first()
+        
+        non_toxic_stats = db.query(
+            func.avg(func.length(models.Message.text)).label('avg_length'),
+            func.count(models.Message.id).label('count'),
+            func.avg(models.Message.confidence).label('avg_confidence')
+        ).filter(models.Message.sentiment == 'not toxic').first()
+        
+        return {
+            "toxic_patterns": {
+                "avg_text_length": round(float(toxic_stats.avg_length or 0), 1),
+                "total_count": toxic_stats.count,
+                "avg_confidence": round(float(toxic_stats.avg_confidence or 0), 3)
+            },
+            "non_toxic_patterns": {
+                "avg_text_length": round(float(non_toxic_stats.avg_length or 0), 1),
+                "total_count": non_toxic_stats.count,
+                "avg_confidence": round(float(non_toxic_stats.avg_confidence or 0), 3)
+            }
+        }
+    except Exception as e:
+        logger.error(f"Toxicity patterns error: {e}")
+        raise HTTPException(status_code=500, detail=f"Toxicity patterns error: {str(e)}")
+
+# Remove the old timeline endpoint and replace with creation date analysis
+@app.get("/messages/creation-analysis")
+def get_creation_analysis(db: Session = Depends(get_db)):
+    """Analyze when messages were added to our database (not comment timestamps)"""
+    from sqlalchemy import func
+    
+    # Group by date when messages were added to our database
+    daily_stats = db.query(
         func.date(models.Message.created_at).label('date'),
-        func.count(models.Message.id).label('total_comments'),
-        func.sum(func.case((models.Message.sentiment == 'toxic', 1), else_=0)).label('toxic_comments'),
-        func.sum(func.case((models.Message.sentiment == 'not toxic', 1), else_=0)).label('not_toxic_comments'),
+        func.count(models.Message.id).label('total_messages'),
+        func.sum(func.case((models.Message.sentiment == 'toxic', 1), else_=0)).label('toxic_messages'),
+        func.sum(func.case((models.Message.source == 'youtube', 1), else_=0)).label('youtube_messages'),
         func.avg(models.Message.confidence).label('avg_confidence')
-    ).filter(
-        models.Message.source == "youtube"
     ).group_by(
         func.date(models.Message.created_at)
     ).order_by(
-        func.date(models.Message.created_at)
-    ).all()
-
+        func.date(models.Message.created_at).desc()
+    ).limit(30).all()  # Last 30 days of database activity
+    
     return {
-        "timeline": [
+        "daily_database_activity": [
             {
                 "date": str(row.date),
-                "total_comments": row.total_comments,
-                "toxic_comments": row.toxic_comments,
-                "not_toxic_comments": row.not_toxic_comments,
-                "toxicity_rate": (row.toxic_comments / row.total_comments * 100) if row.total_comments > 0 else 0,
-                "avg_confidence": round(float(row.avg_confidence or 0), 2)
+                "total_messages": row.total_messages,
+                "toxic_messages": row.toxic_messages,
+                "youtube_messages": row.youtube_messages,
+                "manual_messages": row.total_messages - row.youtube_messages,
+                "toxicity_rate": round((row.toxic_messages / row.total_messages * 100), 2) if row.total_messages > 0 else 0,
+                "avg_confidence": round(float(row.avg_confidence or 0), 3)
             }
-            for row in timeline_data
-        ]
-    }
-
-# Video analysis endpoint
-@app.get("/messages/video-analysis/{video_id}")
-def get_video_analysis(video_id: str, db: Session = Depends(get_db)):
-    """Get analysis for a specific video"""
-    messages = db.query(models.Message).filter(
-        models.Message.youtube_video_id == video_id,
-        models.Message.source == "youtube"
-    ).all()
-
-    if not messages:
-        raise HTTPException(status_code=404, detail="Video not found")
-
-    total_comments = len(messages)
-    toxic_comments = sum(1 for msg in messages if msg.sentiment == "toxic")
-
-    return {
-        "video_id": video_id,
-        "video_title": messages[0].youtube_video_title,
-        "channel": messages[0].youtube_channel,
-        "total_comments": total_comments,
-        "toxic_comments": toxic_comments,
-        "not_toxic_comments": total_comments - toxic_comments,
-        "toxicity_rate": (toxic_comments / total_comments * 100) if total_comments > 0 else 0,
-        "avg_confidence": sum(msg.confidence for msg in messages) / total_comments if total_comments > 0 else 0,
-        "comments": [
-            {
-                "id": msg.id,
-                "text": msg.text,
-                "sentiment": msg.sentiment,
-                "confidence": msg.confidence,
-                "author": msg.youtube_author,
-                "likes": msg.youtube_likes,
-                "created_at": msg.created_at.isoformat()
-            }
-            for msg in messages
+            for row in daily_stats
         ]
     }
 
