@@ -232,15 +232,14 @@ model = None
 try:
     import torch
     from transformers import AutoTokenizer, AutoModelForSequenceClassification
-    # ➔ Usa ruta relativa para Docker y desarrollo local
-    model_dir = os.path.join(os.path.dirname(__file__), '..', 'tokenizador')
-    model_dir = os.path.abspath(model_dir)
+    # Usa ruta absoluta igual que en local
+    model_dir = r"/backendpremium/tokenizador"  # Ruta absoluta en Docker
     model_file = os.path.join(model_dir, 'model.safetensors')
     if os.path.exists(model_dir) and os.path.exists(model_file):
         tokenizer = AutoTokenizer.from_pretrained(model_dir)
         model = AutoModelForSequenceClassification.from_pretrained(model_dir)
         USE_OPTIMIZED_MODEL = True
-        logger.info("✅ Modelo y tokenizador cargados desde ruta relativa 'tokenizador/model.safetensors'")
+        logger.info("✅ Modelo y tokenizador cargados desde ruta absoluta Docker '/backendpremium/tokenizador/model.safetensors'")
     else:
         raise Exception("No se encontró el modelo o la carpeta tokenizador")
 except Exception as e:
