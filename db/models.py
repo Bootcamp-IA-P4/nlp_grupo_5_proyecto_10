@@ -1,7 +1,9 @@
 from sqlalchemy import Column, Integer, String, DateTime, Float
 from sqlalchemy.sql import func
-# from .database import Base
-from database import Base
+try:
+    from db.database import Base  # Para entorno local
+except ImportError:
+    from database import Base     # Para Docker
 class Message(Base):
     __tablename__ = "messages"
 

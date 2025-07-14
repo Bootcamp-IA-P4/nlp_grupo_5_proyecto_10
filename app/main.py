@@ -232,16 +232,22 @@ model = None
 try:
     import torch
     from transformers import AutoTokenizer, AutoModelForSequenceClassification
-    # Usa ruta absoluta igual que en local
-    model_dir = r"/backendpremium/tokenizador"  # Ruta absoluta en Docker
-    model_file = os.path.join(model_dir, 'model.safetensors')
-    if os.path.exists(model_dir) and os.path.exists(model_file):
-        tokenizer = AutoTokenizer.from_pretrained(model_dir)
-        model = AutoModelForSequenceClassification.from_pretrained(model_dir)
-        USE_OPTIMIZED_MODEL = True
-        logger.info("✅ Modelo y tokenizador cargados desde ruta absoluta Docker '/backendpremium/tokenizador/model.safetensors'")
+    # Detecta si está en Docker o local
+    if os.path.exists(r"/backendpremium/tokenizador/model.safetensors"):
+        # Docker
+        model_dir = r"/backendpremium/tokenizador"
+        logger.info("🔵 Usando modelo en Docker: /backendpremium/tokenizador/model.safetensors")
+    elif os.path.exists(r"C:/Users/admin/Desktop/Proyecto 10/nlp_grupo_5_proyecto_10/tokenizador/model.safetensors"):
+        # Local Windows
+        model_dir = r"C:/Users/admin/Desktop/Proyecto 10/nlp_grupo_5_proyecto_10/tokenizador"
+        logger.info("🟢 Usando modelo local: C:/Users/admin/Desktop/Proyecto 10/nlp_grupo_5_proyecto_10/tokenizador/model.safetensors")
     else:
-        raise Exception("No se encontró el modelo o la carpeta tokenizador")
+        raise Exception("No se encontró el modelo en ninguna ruta conocida")
+    model_file = os.path.join(model_dir, 'model.safetensors')
+    tokenizer = AutoTokenizer.from_pretrained(model_dir)
+    model = AutoModelForSequenceClassification.from_pretrained(model_dir)
+    USE_OPTIMIZED_MODEL = True
+    logger.info(f"✅ Modelo y tokenizador cargados desde '{model_file}'")
 except Exception as e:
     logger.error(f"No se pudo cargar el modelo/tokenizador: {e}")
 
